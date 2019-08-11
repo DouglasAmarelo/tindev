@@ -31,7 +31,7 @@ module.exports = {
 		const { name, bio, avatar_url: avatar } = response.data;
 
 		const dev = await Dev.create({
-			name: name,
+			name: name ? name : username,
 			user: username,
 			bio: bio,
 			avatar: avatar
