@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import io from 'socket.io-client';
 import AsyncStorage from '@react-native-community/async-storage';
 import {
 	SafeAreaView,
@@ -14,11 +15,14 @@ import api from '../services/api';
 import logo from '../assets/logo.png';
 import like from '../assets/like.png';
 import dislike from '../assets/dislike.png';
+import itsamatch from '../assets/itsamatch.png';
 
 const Main = ({ navigation }) => {
 	const [users, setUsers] = useState([]);
+	const [matchDev, setMatchDev] = useState(null);
 	const userID = navigation.getParam('user');
 
+	// Chamada na API
 	useEffect(() => {
 		const loadUsers = async () => {
 			const response = await api.get('/devs', {
@@ -30,6 +34,17 @@ const Main = ({ navigation }) => {
 
 		loadUsers();
 
+	}, [userID]);
+
+	// Conexão com o Socket
+	useEffect(() => {
+		const socket = io('http://localhost:3333', {
+			query: { user: userID }
+		});
+
+		socket.on('match', dev => {
+			setMatchDev(dev);
+		});
 	}, [userID]);
 
 	const handleLike = async () => {
@@ -93,6 +108,19 @@ const Main = ({ navigation }) => {
 
 					<TouchableOpacity style={styles.button} onPress={handleLike}>
 						<Image style={styles.dislike} source={like} />
+					</TouchableOpacity>
+				</View>
+			)}
+
+			{matchDev && (
+				<View style={match.container}>
+					<Image style={match.image} source={itsamatch} />
+					<Image style={match.avatar} source={{ uri: matchDev.avatar }} />
+					<Text style={match.name}>{matchDev.name}</Text>
+					<Text style={match.bio}>{matchDev.bio}</Text>
+
+					<TouchableOpacity onPress={() => setMatchDev(null)}>
+						<Text style={match.close}>Fechar</Text>
 					</TouchableOpacity>
 				</View>
 			)}
@@ -197,6 +225,52 @@ const styles = StyleSheet.create({
 		width: 50,
 
 	}
+});
+
+const match = StyleSheet.create({
+	container: {
+		...StyleSheet.absoluteFillObject,
+		alignItems: 'center',
+		backgroundColor: 'rgba(0, 0, 0, .8)',
+		justifyContent: 'center',
+		paddingHorizontal: 30,
+		zIndex: 9999,
+	},
+
+	image: {
+		height: 60,
+		resizeMode: 'contain',
+	},
+
+	avatar: {
+		borderColor: '#fff',
+		borderRadius: 80,
+		borderWidth: 5,
+		height: 160,
+		marginVertical: 30,
+		width: 160,
+	},
+
+	name: {
+		color: '#fff',
+		fontSize: 26,
+		fontWeight: 'bold',
+	},
+
+	bio: {
+		color: 'rgba(255, 255, 255, .8)',
+		marginTop: 10,
+		fontSize: 14,
+		textAlign: 'center',
+		lineHeight: 22,
+	},
+
+	close: {
+		color: 'rgba(255, 255, 255, .8)',
+		marginTop: 30,
+		fontSize: 16,
+		fontWeight: 'bold',
+	},
 });
 
 export default Main;

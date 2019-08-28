@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import io from 'socket.io-client';
 import { Link } from 'react-router-dom';
 import api from '../services/api';
 
@@ -7,11 +8,14 @@ import './main.scss';
 import dislike from '../assets/dislike.svg';
 import like from '../assets/like.svg';
 import logo from '../assets/logo.svg';
+import itsamatch from '../assets/itsamatch.png';
 
 const Main = ({ match }) => {
 	const [users, setUsers] = useState([]);
+	const [matchDev, setMatchDev] = useState(false);
 	const userID = match.params.id;
 
+	// Chamada na API
 	useEffect(() => {
 		const loadUsers = async () => {
 			const response = await api.get('/devs', {
@@ -22,7 +26,17 @@ const Main = ({ match }) => {
 		};
 
 		loadUsers();
+	}, [userID]);
 
+	// Conexão con o Socket
+	useEffect(() => {
+		const socket = io('http://localhost:3333', {
+			query: { user: userID }
+		});
+
+		socket.on('match', dev => {
+			setMatchDev(dev);
+		});
 	}, [userID]);
 
 	const handleLike = async id => {
@@ -79,6 +93,24 @@ const Main = ({ match }) => {
 			) : (
 				<div className="empty">
 					Acabou :(
+				</div>
+			)}
+
+			{ matchDev && (
+				<div className="match-container">
+					<img className="match__image" src={itsamatch} alt="It's a match!"/>
+
+					<img className="match__avatar" src={matchDev.avatar} alt="Brunin"/>
+					<strong className="match__name">{matchDev.name}</strong>
+					<p className="match__bio">{matchDev.bio}</p>
+
+					<button
+						className="match__btn"
+						type="button"
+						onClick={() => setMatchDev(false)}
+					>
+						Fechar
+					</button>
 				</div>
 			)}
 		</div>
